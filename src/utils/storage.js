@@ -146,6 +146,10 @@ export const registerUser = (name, email, password) => {
   if (users.some(u => u.email === emailLower)) {
     throw new Error("An account with this email already exists.");
   }
+
+  if (emailLower === password.toLowerCase().trim()) {
+    throw new Error("Password cannot be identical to your email address.");
+  }
   
   const newUser = { name, email: emailLower, password };
   users.push(newUser);

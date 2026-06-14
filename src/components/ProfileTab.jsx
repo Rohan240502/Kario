@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   User, Database, Sparkles, Sun, Moon, 
   Bell, HelpCircle, RefreshCw, Trash2, ArrowRight, Shield 
 } from 'lucide-react';
+import { getRegisteredUsers } from '../utils/storage';
 
 const ProfileTab = ({ 
   settings, 
@@ -12,6 +13,9 @@ const ProfileTab = ({
   clearAllData,
   onLogout
 }) => {
+  const [showAccounts, setShowAccounts] = useState(false);
+  const usersList = getRegisteredUsers();
+
   const totalMemories = memories.length;
   const totalTasks = tasks.length;
   const totalScreenshots = memories.filter(m => m.type === 'screenshot').length;
@@ -192,6 +196,53 @@ const ProfileTab = ({
           </div>
           <RefreshCw size={14} style={{ color: 'var(--danger)' }} />
         </div>
+
+        {/* Local Accounts Directory (Debug Info) */}
+        <div 
+          className="settings-item settings-item-clickable"
+          onClick={() => setShowAccounts(!showAccounts)}
+        >
+          <div className="settings-left">
+            <User size={18} style={{ color: 'var(--text-primary)' }} />
+            <span>Local Accounts ({usersList.length})</span>
+          </div>
+          <ArrowRight size={14} style={{ transform: showAccounts ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', color: 'var(--text-secondary)' }} />
+        </div>
+
+        {showAccounts && (
+          <div style={{
+            background: 'var(--bg-app)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            padding: '12px 14px',
+            marginTop: '-12px',
+            marginBottom: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px'
+          }}>
+            {usersList.map((usr, idx) => (
+              <div 
+                key={idx} 
+                style={{ 
+                  background: 'var(--bg-card)', 
+                  border: '1px solid var(--border-color)', 
+                  borderRadius: 'var(--radius-sm)', 
+                  padding: '10px 12px',
+                  fontSize: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                  textAlign: 'left'
+                }}
+              >
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>👤 {usr.name}</div>
+                <div style={{ color: 'var(--text-secondary)' }}>✉️ {usr.email}</div>
+                <div style={{ fontFamily: 'monospace', color: 'var(--primary)', fontWeight: 600 }}>🔑 Password: <span style={{ color: 'var(--text-primary)' }}>{usr.password}</span></div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '11px', margin: '20px 0 10px 0' }}>
