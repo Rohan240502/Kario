@@ -1703,4 +1703,38 @@ textarea.form-control {
     right: 20px;
     z-index: 95;
   }
+  .onboarding-container {
+    padding: calc(20px + env(safe-area-inset-top, 0px)) 20px calc(24px + env(safe-area-inset-bottom, 0px)) 20px;
+    height: 100%;
+    overflow-y: auto;
+  }
+  .onboarding-illustrations {
+    padding: 16px 0;
+    min-height: 150px;
+    flex: none;
+  }
+  .illustration-circle {
+    width: 120px !important;
+    height: 120px !important;
+  }
+  .illustration-circle svg {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  .onboarding-info {
+    margin-bottom: 20px;
+  }
+  .onboarding-title {
+    font-size: 22px;
+  }
+  .onboarding-desc {
+    font-size: 14px;
+  }
+  .permission-list {
+    margin-top: 15px;
+  }
+  .permission-item {
+    padding: 10px 14px;
+  }
 }
+

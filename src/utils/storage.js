@@ -273,8 +273,29 @@ export const clearAllData = () => {
   const conversationsKey = getScopedKey("conversations");
   const settingsKey = getScopedKey("settings");
   
-  localStorage.removeItem(memoriesKey);
-  localStorage.removeItem(tasksKey);
-  localStorage.removeItem(conversationsKey);
-  localStorage.removeItem(settingsKey);
+  // Save empty arrays to prevent re-seeding default data
+  localStorage.setItem(memoriesKey, JSON.stringify([]));
+  localStorage.setItem(tasksKey, JSON.stringify([]));
+  
+  // Clear chat logs but keep a fresh, empty-db welcome greeting
+  const user = getCurrentUserSession();
+  const userName = user ? user.name : "Rohan";
+  const initialConv = [
+    {
+      id: "msg-fresh",
+      sender: "assistant",
+      text: `Hi ${userName}! I have cleared your database and all records have been reset. You're starting completely fresh with zero tasks and memories! What can I help you with today?`,
+      time: "Just now"
+    }
+  ];
+  localStorage.setItem(conversationsKey, JSON.stringify(initialConv));
+
+  // Reset storage stats but preserve user settings & onboarding flag!
+  const currentSettings = getUserSettings();
+  const updatedSettings = {
+    ...currentSettings,
+    storageUsedGB: 0.0,
+    completedOnboarding: true // Keep user on home screen!
+  };
+  localStorage.setItem(settingsKey, JSON.stringify(updatedSettings));
 };
