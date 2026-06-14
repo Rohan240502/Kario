@@ -65,7 +65,7 @@ const HomeTab = ({
   };
 
   return (
-    <div style={{ position: 'relative', height: '100%' }}>
+    <div style={{ position: 'relative', height: '100%', width: '100%', maxWidth: '100%' }}>
       {/* Header Greeting */}
       <div className="header-area">
         <div className="header-greeting">
@@ -185,9 +185,18 @@ const HomeTab = ({
         <div className="insights-text">
           <h4>Smart Insights</h4>
           <p>
-            {tasks.filter(t => !t.completed).length > 0 
-              ? `You have ${tasks.filter(t => !t.completed).length} pending tasks to finish. Your Macbook Pro warranty document was stored recently.` 
-              : "All tasks completed! Try scanning an invoice or recording a voice note to add new memories."}
+            {(() => {
+              const pending = tasks.filter(t => !t.completed);
+              if (pending.length === 0) {
+                return "All tasks completed! Try scanning an invoice or recording a voice note to add new memories.";
+              }
+              const hasMacbook = memories.some(m => m.title?.toLowerCase().includes("macbook") || m.content?.toLowerCase().includes("macbook"));
+              if (hasMacbook) {
+                return `You have ${pending.length} pending task(s) to finish. Your Macbook Pro warranty document was stored recently.`;
+              }
+              const nextTask = pending[0];
+              return `You have ${pending.length} pending task(s). Next up: "${nextTask.title}" (due ${nextTask.dueDate}).`;
+            })()}
           </p>
         </div>
       </div>

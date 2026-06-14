@@ -182,6 +182,9 @@ body {
 .tab-content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
   padding: 16px 20px 100px 20px; /* Offset bottom navbar height */
   scroll-behavior: smooth;
 }
@@ -583,6 +586,8 @@ input:checked + .slider-round::before {
   padding: 4px 0 16px 0;
   margin-bottom: 12px;
   scroll-snap-type: x mandatory;
+  width: 100%;
+  max-width: 100%;
 }
 
 .quick-actions-scroll::-webkit-scrollbar {
@@ -1683,8 +1688,11 @@ textarea.form-control {
   .tab-content {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 16px 16px 24px 16px;
     height: auto;
+    width: 100%;
+    max-width: 100%;
   }
   .bottom-navbar {
     position: relative;
