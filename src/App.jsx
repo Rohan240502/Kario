@@ -397,7 +397,11 @@ Let me know if you would like me to convert this info into a checkbox task check
 
   // Onboarding guard
   if (!settings.completedOnboarding) {
-    return <Onboarding onComplete={handleOnboardingComplete} />;
+    return (
+      <DeviceWrapper isDarkTheme={settings.theme === 'dark'} setIsDarkTheme={(val) => setSettings(prev => ({ ...prev, theme: val ? 'dark' : 'light' }))}>
+        <Onboarding onComplete={handleOnboardingComplete} />
+      </DeviceWrapper>
+    );
   }
 
   return (
