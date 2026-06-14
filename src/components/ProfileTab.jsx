@@ -1,0 +1,205 @@
+import React from 'react';
+import { 
+  User, Database, Sparkles, Sun, Moon, 
+  Bell, HelpCircle, RefreshCw, Trash2, ArrowRight, Shield 
+} from 'lucide-react';
+
+const ProfileTab = ({ 
+  settings, 
+  setSettings, 
+  memories, 
+  tasks, 
+  clearAllData,
+  onLogout
+}) => {
+  const totalMemories = memories.length;
+  const totalTasks = tasks.length;
+  const totalScreenshots = memories.filter(m => m.type === 'screenshot').length;
+  const totalDocuments = memories.filter(m => m.type === 'document').length;
+
+  const handleModelChange = (e) => {
+    setSettings(prev => ({
+      ...prev,
+      aiModel: e.target.value
+    }));
+  };
+
+  const handleThemeChange = (e) => {
+    setSettings(prev => ({
+      ...prev,
+      theme: e.target.value
+    }));
+  };
+
+  const handleNotificationToggle = () => {
+    setSettings(prev => ({
+      ...prev,
+      notifications: !prev.notifications
+    }));
+  };
+
+  const handleReset = () => {
+    if (window.confirm("Are you sure you want to reset all Kario data to defaults? This will clear your custom notes, screenshots, and chat logs.")) {
+      clearAllData();
+      window.location.reload();
+    }
+  };
+
+  return (
+    <div style={{ height: '100%' }}>
+      {/* Profile Header */}
+      <div className="profile-user-card">
+        <div className="profile-avatar-lg">
+          {settings.userName.charAt(0)}
+        </div>
+        <h3>{settings.userName}</h3>
+        <p>{settings.userEmail}</p>
+
+        {/* Stats Grid */}
+        <div className="stats-grid">
+          <div className="stat-item">
+            <div className="stat-value">{totalMemories}</div>
+            <div className="stat-label">Total Memories</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-value">{totalTasks}</div>
+            <div className="stat-label">Total Tasks</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-value">{totalScreenshots}</div>
+            <div className="stat-label">Screenshots</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-value">{totalDocuments}</div>
+            <div className="stat-label">Documents</div>
+          </div>
+        </div>
+
+        {/* Storage Bar */}
+        <div className="storage-progress-container">
+          <div className="storage-label-row">
+            <span>Local Storage Used</span>
+            <span>{settings.storageUsedGB} GB / {settings.storageLimitGB} GB</span>
+          </div>
+          <div className="storage-progress-bar">
+            <div 
+              className="storage-progress-fill" 
+              style={{ width: `${(settings.storageUsedGB / settings.storageLimitGB) * 100}%` }}
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Settings Options List */}
+      <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', paddingLeft: '4px' }}>Settings</h3>
+      <div className="settings-list">
+        
+        {/* Theme Select */}
+        <div className="settings-item">
+          <div className="settings-left">
+            {settings.theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
+            <span>App Theme</span>
+          </div>
+          <select 
+            className="settings-select"
+            value={settings.theme}
+            onChange={handleThemeChange}
+          >
+            <option value="light">Light Mode</option>
+            <option value="dark">Dark Mode</option>
+          </select>
+        </div>
+
+        {/* AI Model Select */}
+        <div className="settings-item">
+          <div className="settings-left">
+            <Sparkles size={18} />
+            <span>AI Model Engine</span>
+          </div>
+          <select 
+            className="settings-select"
+            value={settings.aiModel}
+            onChange={handleModelChange}
+          >
+            <option value="Gemini 3.5 Flash (Default)">Gemini 3.5 Flash</option>
+            <option value="Gemini 3.5 Pro (High Accuracy)">Gemini 3.5 Pro</option>
+            <option value="Kario Local Engine (Offline)">Kario Offline</option>
+          </select>
+        </div>
+
+        {/* Notifications Toggle */}
+        <div className="settings-item">
+          <div className="settings-left">
+            <Bell size={18} />
+            <span>Smart Notifications</span>
+          </div>
+          <label className="switch-control">
+            <input 
+              type="checkbox" 
+              checked={settings.notifications}
+              onChange={handleNotificationToggle}
+            />
+            <span className="slider-round"></span>
+          </label>
+        </div>
+
+        {/* Backup Clickable */}
+        <div 
+          className="settings-item settings-item-clickable"
+          onClick={() => alert("Mock database snapshot downloaded. Auto-sync is active.")}
+        >
+          <div className="settings-left">
+            <Database size={18} />
+            <span>Backup & Sync</span>
+          </div>
+          <ArrowRight size={14} style={{ color: 'var(--text-secondary)' }} />
+        </div>
+
+        {/* Security / Privacy */}
+        <div 
+          className="settings-item settings-item-clickable"
+          onClick={() => alert("Kario runs 100% locally on your device. Your data is encrypted.")}
+        >
+          <div className="settings-left">
+            <Shield size={18} />
+            <span>Privacy Policy</span>
+          </div>
+          <ArrowRight size={14} style={{ color: 'var(--text-secondary)' }} />
+        </div>
+
+        {/* Log Out */}
+        <div 
+          className="settings-item settings-item-clickable" 
+          onClick={onLogout}
+          style={{ color: 'var(--primary)' }}
+        >
+          <div className="settings-left">
+            <User size={18} style={{ color: 'var(--primary)' }} />
+            <span>Log Out</span>
+          </div>
+          <ArrowRight size={14} style={{ color: 'var(--primary)' }} />
+        </div>
+
+        {/* Reset Database */}
+        <div 
+          className="settings-item settings-item-clickable" 
+          onClick={handleReset}
+          style={{ color: 'var(--danger)' }}
+        >
+          <div className="settings-left">
+            <Trash2 size={18} style={{ color: 'var(--danger)' }} />
+            <span>Clear Database</span>
+          </div>
+          <RefreshCw size={14} style={{ color: 'var(--danger)' }} />
+        </div>
+      </div>
+
+      <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '11px', margin: '20px 0 10px 0' }}>
+        Kario v1.0.0 (Local Edition)<br />
+        Designed with 💜 for mobile-first personal memory space
+      </div>
+    </div>
+  );
+};
+
+export default ProfileTab;

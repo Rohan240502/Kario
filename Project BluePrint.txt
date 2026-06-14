@@ -1,0 +1,425 @@
+APP NAME: MemoryOS (AI Personal Assistant for Everything on Your Phone)
+
+CORE IDEA:
+Save everything (notes, screenshots, files, tasks, calendar events, clipboard items) into one AI-powered memory system. Users can search naturally or ask questions and instantly find information.
+
+DESIGN STYLE:
+- Minimal and modern
+- Apple Notes simplicity
+- Google Photos search experience
+- ChatGPT conversational interface
+- Notion-style cards
+- Rounded corners (16-24px)
+- Soft shadows
+- Large search-first UI
+- Bottom navigation
+- Light & Dark mode
+
+COLOR SYSTEM:
+Primary: #4F46E5 (Indigo)
+Background Light: #F8FAFC
+Background Dark: #0F172A
+Card Light: #FFFFFF
+Card Dark: #1E293B
+Success: #10B981
+Warning: #F59E0B
+Danger: #EF4444
+Text Primary: #111827
+Text Secondary: #6B7280
+
+TYPOGRAPHY:
+Heading Large: 32 Bold
+Heading Medium: 24 Bold
+Section Title: 20 Semibold
+Body: 16 Regular
+Caption: 14 Regular
+
+BOTTOM NAVIGATION (5 TABS):
+1. Home
+2. Memory
+3. Tasks
+4. Assistant
+5. Profile
+
+======================================================
+HOME TAB
+======================================================
+
+HEADER:
+- Greeting
+  "Good Morning, User 👋"
+- Profile Avatar
+
+GLOBAL SEARCH:
+[ Search Everything... ]
+
+QUICK ACTIONS (Horizontal Scroll):
++ Note
++ Import Screenshot
++ Voice Note
++ Scan Document
++ Add Task
+
+TODAY'S FOCUS CARD:
+Title: Today's Focus
+- 3 High Priority Tasks
+- Progress Ring
+- Completion %
+
+RECENT MEMORIES:
+Card Grid
+- Screenshot
+- Note
+- PDF
+- Link
+
+UPCOMING EVENTS:
+- Today Calendar Event
+- Tomorrow Event
+
+AI INSIGHTS SECTION:
+Examples:
+"You saved 24 coding screenshots this week."
+"You have 7 unfinished tasks."
+"You haven't reviewed tax documents recently."
+
+FLOATING ACTION BUTTON:
++
+Options:
+- Note
+- Task
+- Voice
+- Scan
+- Upload
+
+======================================================
+MEMORY TAB
+======================================================
+
+TOP SEARCH BAR:
+Search memories, screenshots, files...
+
+FILTER CHIPS:
+All
+Screenshots
+Notes
+Documents
+Links
+Voice Notes
+Clipboard
+Calendar
+
+SORT OPTIONS:
+Recent
+Oldest
+Most Viewed
+AI Recommended
+
+MEMORY GRID/LIST
+
+MEMORY CARD:
+Thumbnail/Icon
+Title
+Summary
+Tags
+Date
+
+Example:
+📷 React Native Tutorial
+AI Summary:
+Navigation setup guide
+#coding #react
+2 days ago
+
+LONG PRESS ACTIONS:
+- Open
+- Summarize
+- Create Task
+- Related Memories
+- Share
+- Delete
+
+MEMORY DETAILS PAGE:
+
+Header
+Title
+
+AI Summary
+
+Original Content
+
+Tags
+
+Related Memories
+
+AI Actions:
+- Summarize
+- Explain
+- Convert To Task
+- Find Similar
+- Share
+
+======================================================
+TASKS TAB
+======================================================
+
+HEADER:
+Tasks
+
+AI PLAN BUTTON:
+[ Plan My Day ]
+
+TASK CATEGORIES:
+Today
+Upcoming
+Completed
+AI Suggested
+
+TASK CARD:
+
+Task Name
+Priority Badge
+Due Date
+Source
+
+Example:
+Finish Landing Page
+
+High Priority
+
+Due Tomorrow
+
+Generated From:
+Screenshot
+
+TASK DETAIL PAGE:
+
+Title
+
+Description
+
+Due Date
+
+Priority
+
+Related Memory
+
+AI Suggestions
+
+SUBTASKS
+
+Add Note
+
+MARK COMPLETE BUTTON
+
+======================================================
+ASSISTANT TAB
+======================================================
+
+CHATGPT-LIKE INTERFACE
+
+HEADER:
+AI Assistant
+
+CHAT INPUT:
+Ask anything...
+
+PROMPT SUGGESTIONS:
+
+Where is my invoice?
+Find React screenshots.
+Show travel documents.
+What tasks are pending?
+Summarize today's notes.
+What did I save about AI?
+
+CHAT RESPONSE CARD:
+
+Answer
+
+Related Memories
+
+Actions:
+Open
+Summarize
+Create Task
+
+VOICE INPUT BUTTON
+
+AI MEMORY SEARCH MODE:
+
+Examples:
+"Find all restaurant recommendations."
+"Show coding screenshots from last month."
+"Find receipt for laptop purchase."
+
+======================================================
+PROFILE TAB
+======================================================
+
+USER PROFILE
+
+Avatar
+
+Name
+
+Email
+
+STATISTICS:
+
+Total Memories
+Total Tasks
+Total Documents
+Total Screenshots
+Storage Used
+
+SETTINGS:
+
+Account
+
+Storage
+
+AI Model
+
+Theme
+
+Notifications
+
+Privacy
+
+Import Data
+
+Export Data
+
+Backup & Sync
+
+About
+
+Logout
+
+======================================================
+GLOBAL COMPONENTS
+======================================================
+
+SEARCH BAR:
+Height: 56px
+Radius: 16px
+
+PRIMARY BUTTON:
+Height: 52px
+Radius: 14px
+
+CARD:
+Radius: 20px
+
+CHIPS:
+Radius: 999px
+
+BOTTOM NAV:
+Height: 80px
+
+FLOATING ACTION BUTTON:
+Size: 64px
+
+======================================================
+ONBOARDING FLOW
+======================================================
+
+SCREEN 1:
+Store Everything
+
+"Notes, screenshots, files and tasks in one place."
+
+SCREEN 2:
+AI Understands Everything
+
+"Automatic summaries, tags and organization."
+
+SCREEN 3:
+Find Anything Instantly
+
+"Ask questions in natural language."
+
+SCREEN 4:
+Permissions
+
+Photos
+Files
+Notifications
+Microphone
+
+GET STARTED BUTTON
+
+======================================================
+EMPTY STATES
+======================================================
+
+NO MEMORIES:
+"Start saving memories."
+
+NO TASKS:
+"Create your first task."
+
+NO SEARCH RESULTS:
+"Nothing found. Try another search."
+
+NO DOCUMENTS:
+"Upload your first document."
+
+======================================================
+MVP FEATURES (VERSION 1)
+======================================================
+
+✓ Notes
+✓ Screenshots
+✓ OCR
+✓ AI Summaries
+✓ AI Tags
+✓ AI Search
+✓ AI Assistant Chat
+✓ Task Generation
+✓ Local Storage
+
+======================================================
+VERSION 2
+======================================================
+
+✓ Calendar Sync
+✓ Voice Notes
+✓ Clipboard Tracking
+✓ Cloud Sync
+✓ Shared Workspaces
+✓ AI Daily Planner
+✓ Smart Notifications
+
+======================================================
+VERSION 3
+======================================================
+
+✓ Full Phone Memory
+✓ Email Integration
+✓ WhatsApp Summaries
+✓ Personal Knowledge Graph
+✓ Autonomous AI Assistant
+✓ Cross Device Sync
+✓ AI Life Dashboard
+
+CORE USER FLOW:
+
+Capture Content
+↓
+AI Processes Content
+↓
+Summary Generated
+↓
+Tags Generated
+↓
+Embedding Created
+↓
+Stored In Memory
+↓
+User Searches Or Asks AI
+↓
+Instant Retrieval
+↓
+Action Taken (Task / Reminder / Share)
