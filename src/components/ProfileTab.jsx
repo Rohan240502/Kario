@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   User, Database, Sparkles, Sun, Moon, 
-  Bell, HelpCircle, RefreshCw, Trash2, ArrowRight, Shield 
+  Bell, HelpCircle, RefreshCw, Trash2, ArrowRight, Shield,
+  Eye, EyeOff
 } from 'lucide-react';
 import { getRegisteredUsers } from '../utils/storage';
 
@@ -14,6 +15,8 @@ const ProfileTab = ({
   onLogout
 }) => {
   const [showAccounts, setShowAccounts] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
+  const [showPasswords, setShowPasswords] = useState({});
   const usersList = getRegisteredUsers();
 
   const totalMemories = memories.length;
@@ -200,7 +203,20 @@ const ProfileTab = ({
         {/* Local Accounts Directory (Debug Info) */}
         <div 
           className="settings-item settings-item-clickable"
-          onClick={() => setShowAccounts(!showAccounts)}
+          onClick={() => {
+            if (!showAccounts && !unlocked) {
+              const pass = window.prompt("For security, please enter your current account password to view the local accounts directory:");
+              const currentUser = JSON.parse(localStorage.getItem("kario_current_user"));
+              if (currentUser && pass === currentUser.password) {
+                setUnlocked(true);
+                setShowAccounts(true);
+              } else if (pass !== null) {
+                alert("Incorrect password. Access denied.");
+              }
+            } else {
+              setShowAccounts(!showAccounts);
+            }
+          }}
         >
           <div className="settings-left">
             <User size={18} style={{ color: 'var(--text-primary)' }} />
@@ -209,7 +225,7 @@ const ProfileTab = ({
           <ArrowRight size={14} style={{ transform: showAccounts ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', color: 'var(--text-secondary)' }} />
         </div>
 
-        {showAccounts && (
+        {showAccounts && unlocked && (
           <div style={{
             background: 'var(--bg-app)',
             border: '1px solid var(--border-color)',
@@ -221,26 +237,52 @@ const ProfileTab = ({
             flexDirection: 'column',
             gap: '8px'
           }}>
-            {usersList.map((usr, idx) => (
-              <div 
-                key={idx} 
-                style={{ 
-                  background: 'var(--bg-card)', 
-                  border: '1px solid var(--border-color)', 
-                  borderRadius: 'var(--radius-sm)', 
-                  padding: '10px 12px',
-                  fontSize: '12px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '4px',
-                  textAlign: 'left'
-                }}
-              >
-                <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>👤 {usr.name}</div>
-                <div style={{ color: 'var(--text-secondary)' }}>✉️ {usr.email}</div>
-                <div style={{ fontFamily: 'monospace', color: 'var(--primary)', fontWeight: 600 }}>🔑 Password: <span style={{ color: 'var(--text-primary)' }}>{usr.password}</span></div>
-              </div>
-            ))}
+            {usersList.map((usr, idx) => {
+              const isVisible = showPasswords[usr.email];
+              return (
+                <div 
+                  key={idx} 
+                  style={{ 
+                    background: 'var(--bg-card)', 
+                    border: '1px solid var(--border-color)', 
+                    borderRadius: 'var(--radius-sm)', 
+                    padding: '10px 12px',
+                    fontSize: '12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    textAlign: 'left'
+                  }}
+                >
+                  <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>👤 {usr.name}</div>
+                  <div style={{ color: 'var(--text-secondary)' }}>✉️ {usr.email}</div>
+                  <div style={{ 
+                    fontFamily: 'monospace', 
+                    color: 'var(--primary)', 
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span>🔑 Password: <span style={{ color: 'var(--text-primary)', fontFamily: isVisible ? 'monospace' : 'sans-serif' }}>{isVisible ? usr.password : '••••••••'}</span></span>
+                    <button 
+                      onClick={() => setShowPasswords(prev => ({ ...prev, [usr.email]: !prev[usr.email] }))}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--text-secondary)',
+                        padding: '2px 4px',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      {isVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
