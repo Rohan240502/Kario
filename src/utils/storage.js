@@ -305,3 +305,49 @@ export const clearAllData = () => {
   };
   localStorage.setItem(settingsKey, JSON.stringify(updatedSettings));
 };
+
+// ========================================================
+// DATABASE EXPORT/IMPORT (SYNC ACROSS DEVICES)
+// ========================================================
+
+export const exportBackupData = () => {
+  const backup = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith("kario_")) {
+      backup[key] = localStorage.getItem(key);
+    }
+  }
+  return JSON.stringify(backup, null, 2);
+};
+
+export const importBackupData = (backupJsonString) => {
+  try {
+    const backup = JSON.parse(backupJsonString);
+    const keys = Object.keys(backup);
+    if (keys.length === 0 || !keys.every(k => k.startsWith("kario_"))) {
+      throw new Error("Invalid backup file format: does not contain valid Kario database keys.");
+    }
+
+    // Identify keys to clear
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("kario_")) {
+        keysToRemove.push(key);
+      }
+    }
+    // Remove existing keys
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+
+    // Restore from backup
+    for (const [key, value] of Object.entries(backup)) {
+      if (value !== null) {
+        localStorage.setItem(key, value);
+      }
+    }
+    return true;
+  } catch (err) {
+    throw new Error(err.message || "Failed to parse backup JSON database file.");
+  }
+};

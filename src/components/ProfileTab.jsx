@@ -4,7 +4,7 @@ import {
   Bell, HelpCircle, RefreshCw, Trash2, ArrowRight, Shield,
   Eye, EyeOff
 } from 'lucide-react';
-import { getRegisteredUsers } from '../utils/storage';
+import { getRegisteredUsers, exportBackupData, importBackupData } from '../utils/storage';
 
 const ProfileTab = ({ 
   settings, 
@@ -17,6 +17,7 @@ const ProfileTab = ({
   const [showAccounts, setShowAccounts] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [showPasswords, setShowPasswords] = useState({});
+  const [showBackupPanel, setShowBackupPanel] = useState(false);
   const usersList = getRegisteredUsers();
 
   const totalMemories = memories.length;
@@ -153,14 +154,111 @@ const ProfileTab = ({
         {/* Backup Clickable */}
         <div 
           className="settings-item settings-item-clickable"
-          onClick={() => alert("Mock database snapshot downloaded. Auto-sync is active.")}
+          onClick={() => setShowBackupPanel(!showBackupPanel)}
         >
           <div className="settings-left">
             <Database size={18} />
             <span>Backup & Sync</span>
           </div>
-          <ArrowRight size={14} style={{ color: 'var(--text-secondary)' }} />
+          <ArrowRight size={14} style={{ transform: showBackupPanel ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', color: 'var(--text-secondary)' }} />
         </div>
+
+        {showBackupPanel && (
+          <div style={{
+            background: 'var(--bg-app)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            padding: '16px',
+            marginTop: '-12px',
+            marginBottom: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+              Kario is 100% offline-first. To transfer your accounts and memories between devices, export your data as a backup file and import it on the other device.
+            </p>
+            
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {/* Export Button */}
+              <button 
+                type="button"
+                onClick={() => {
+                  try {
+                    const dataStr = exportBackupData();
+                    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                    const exportFileDefaultName = `kario_backup_${new Date().toISOString().slice(0,10)}.json`;
+                    
+                    const linkElement = document.createElement('a');
+                    linkElement.setAttribute('href', dataUri);
+                    linkElement.setAttribute('download', exportFileDefaultName);
+                    linkElement.click();
+                  } catch (err) {
+                    alert("Export failed: " + err.message);
+                  }
+                }}
+                className="onboarding-btn"
+                style={{ 
+                  flex: 1, 
+                  height: '36px', 
+                  fontSize: '13px', 
+                  padding: '0 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                📥 Export Backup
+              </button>
+              
+              {/* Import Button Wrapper */}
+              <label 
+                className="onboarding-btn"
+                style={{ 
+                  flex: 1, 
+                  height: '36px', 
+                  fontSize: '13px', 
+                  padding: '0 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  background: 'none',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
+              >
+                📤 Import Backup
+                <input 
+                  type="file" 
+                  accept=".json"
+                  onChange={(e) => {
+                    const fileReader = new FileReader();
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    
+                    fileReader.onload = (event) => {
+                      try {
+                        const content = event.target.result;
+                        if (importBackupData(content)) {
+                          alert("Database successfully restored! The app will now reload.");
+                          window.location.reload();
+                        }
+                      } catch (err) {
+                        alert("Import failed: " + err.message);
+                      }
+                    };
+                    fileReader.readAsText(file);
+                  }}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
+          </div>
+        )}
 
         {/* Security / Privacy */}
         <div 
