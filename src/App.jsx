@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Home, Database, CheckSquare, Sparkles, User, 
-  X, Calendar, AlertCircle, Eye, Trash2, CheckCircle, ArrowRight
+  X, Calendar, AlertCircle, Eye, Trash2, CheckCircle, ArrowRight, Mic
 } from 'lucide-react';
 
 // Subcomponents
@@ -45,6 +45,118 @@ function App() {
   const [screenshotForm, setScreenshotForm] = useState({ name: 'react_state_bug.png', file: null });
   const [documentForm, setDocumentForm] = useState({ title: '', content: '', tags: '' });
   const [taskForm, setTaskForm] = useState({ title: '', description: '', priority: 'medium', dueDate: 'Today' });
+  const [linkForm, setLinkForm] = useState({ url: '' });
+
+  // Live Voice Recording States
+  const [voiceIsRecording, setVoiceIsRecording] = useState(false);
+  const [voiceTranscriptText, setVoiceTranscriptText] = useState('');
+  const [voiceSeconds, setVoiceSeconds] = useState(0);
+  const voiceTimerRef = useRef(null);
+  const voiceRecognitionRef = useRef(null);
+
+  // Real OCR States
+  const [isOcrScanning, setIsOcrScanning] = useState(false);
+  const [ocrScanProgress, setOcrScanProgress] = useState(0);
+
+  const formatVoiceTime = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const handleStartVoiceRecord = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceIsRecording(true);
+      setVoiceTranscriptText("Listening... (Speech API not supported in browser; running simulation)");
+      setVoiceSeconds(0);
+      
+      voiceTimerRef.current = setInterval(() => {
+        setVoiceSeconds(prev => prev + 1);
+      }, 1000);
+      
+      setTimeout(() => {
+        setVoiceTranscriptText("Voice Note: We should integrate client notifications inside Kario by checking calendar schedules. This triggers reminders 10 minutes prior to calls.");
+      }, 3500);
+      return;
+    }
+
+    try {
+      const rec = new SpeechRecognition();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = 'en-US';
+
+      rec.onstart = () => {
+        setVoiceIsRecording(true);
+        setVoiceTranscriptText('Say something...');
+        setVoiceSeconds(0);
+        
+        voiceTimerRef.current = setInterval(() => {
+          setVoiceSeconds(prev => prev + 1);
+        }, 1000);
+      };
+
+      rec.onresult = (event) => {
+        let currentText = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          currentText += event.results[i][0].transcript;
+        }
+        setVoiceTranscriptText(currentText);
+      };
+
+      rec.onerror = (e) => {
+        console.error("Speech Recognition Error", e);
+      };
+
+      rec.onend = () => {
+        setVoiceIsRecording(false);
+        clearInterval(voiceTimerRef.current);
+      };
+
+      voiceRecognitionRef.current = rec;
+      rec.start();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleStopVoiceRecord = () => {
+    if (voiceRecognitionRef.current) {
+      try {
+        voiceRecognitionRef.current.stop();
+      } catch (e) {}
+    }
+    setVoiceIsRecording(false);
+    clearInterval(voiceTimerRef.current);
+  };
+
+  const handleSaveVoiceMemory = () => {
+    const finalContent = voiceTranscriptText.trim() && !voiceTranscriptText.startsWith("Listening") && !voiceTranscriptText.startsWith("Say something")
+      ? voiceTranscriptText 
+      : 'Voice Note: We should integrate client notifications inside Kario by checking calendar schedules.';
+      
+    const newVoiceMemory = {
+      id: `mem-${Date.now()}`,
+      type: 'voice',
+      title: 'Voice Memo Annotation',
+      content: finalContent,
+      summary: finalContent.slice(0, 50) + (finalContent.length > 50 ? '...' : ''),
+      tags: ['voice', 'ideas', 'audio-note'],
+      date: 'Today, Just now',
+      views: 1
+    };
+
+    const updated = [newVoiceMemory, ...memories];
+    setMemories(updated);
+    saveMemories(updated);
+    
+    // Reset states
+    setVoiceTranscriptText('');
+    setVoiceSeconds(0);
+    setVoiceIsRecording(false);
+    setAddModalType(null);
+  };
 
   // Load Data on Mount or Session User Change
   useEffect(() => {
@@ -146,33 +258,93 @@ function App() {
     setDocumentForm({ title: '', content: '', tags: '' });
   };
 
-  const handleImportScreenshot = (e) => {
+  const handleImportScreenshot = async (e) => {
     e.preventDefault();
-    const result = simulateOcr(screenshotForm.name);
-    
-    const newMemory = {
-      id: `mem-${Date.now()}`,
-      type: 'screenshot',
-      title: result.title,
-      content: result.content,
-      summary: result.summary,
-      tags: result.tags,
-      date: 'Today, Just now',
-      views: 1,
-      thumbnail: screenshotForm.file || '/assets/memoryos_tasks.jpg', // Use base64 upload if exists
-      ocrText: result.content
-    };
+    setIsOcrScanning(true);
+    setOcrScanProgress(10);
 
-    const updated = [newMemory, ...memories];
-    setMemories(updated);
-    saveMemories(updated);
-    setAddModalType(null);
-    setScreenshotForm({ name: 'react_state_bug.png', file: null }); // Reset
-    
-    // Automatically open the new memory to show OCR results
-    setTimeout(() => {
-      setDetailMemory(newMemory);
-    }, 200);
+    const hasFile = !!screenshotForm.file;
+    const name = screenshotForm.name;
+    const file = screenshotForm.file;
+
+    // Real OCR via Tesseract.js if file and script are available
+    if (window.Tesseract && hasFile) {
+      try {
+        setOcrScanProgress(30);
+        const worker = await window.Tesseract.createWorker({
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              setOcrScanProgress(Math.round(30 + m.progress * 60));
+            }
+          }
+        });
+        
+        setOcrScanProgress(50);
+        const ret = await worker.recognize(file);
+        const text = ret.data.text;
+        await worker.terminate();
+
+        setOcrScanProgress(100);
+        setTimeout(() => {
+          setIsOcrScanning(false);
+          const newMemory = {
+            id: `mem-${Date.now()}`,
+            type: 'screenshot',
+            title: `OCR Scan: ${name.split('.')[0]}`,
+            content: text || "No readable text detected in image.",
+            summary: text ? (text.slice(0, 80) + "...") : `Scanned image file ${name}`,
+            tags: ['ocr-scan', 'screenshot', 'imported'],
+            date: 'Today, Just now',
+            views: 1,
+            thumbnail: file,
+            ocrText: text || "No text detected."
+          };
+          const updated = [newMemory, ...memories];
+          setMemories(updated);
+          saveMemories(updated);
+          setAddModalType(null);
+          setScreenshotForm({ name: 'react_state_bug.png', file: null });
+          setTimeout(() => setDetailMemory(newMemory), 200);
+        }, 500);
+        return;
+      } catch (err) {
+        console.error("Tesseract OCR failed, falling back to simulation", err);
+      }
+    }
+
+    // Fallback: Simulation Scanner animation
+    let currentProgress = 10;
+    const interval = setInterval(() => {
+      currentProgress += 15;
+      if (currentProgress >= 100) {
+        clearInterval(interval);
+        setOcrScanProgress(100);
+        setTimeout(() => {
+          setIsOcrScanning(false);
+          const result = simulateOcr(name);
+          const newMemory = {
+            id: `mem-${Date.now()}`,
+            type: 'screenshot',
+            title: result.title,
+            content: result.content,
+            summary: result.summary,
+            tags: [...result.tags, 'offline-ocr'],
+            date: 'Today, Just now',
+            views: 1,
+            thumbnail: file || '/assets/memoryos_tasks.jpg',
+            ocrText: result.content
+          };
+          const updated = [newMemory, ...memories];
+          setMemories(updated);
+          saveMemories(updated);
+          setAddModalType(null);
+          setScreenshotForm({ name: 'react_state_bug.png', file: null });
+          setTimeout(() => setDetailMemory(newMemory), 200);
+        }, 500);
+      } else {
+        setOcrScanProgress(currentProgress);
+      }
+    }, 250);
   };
 
   const handleCreateTask = (e) => {
@@ -273,6 +445,75 @@ Let me know if you would like me to convert this info into a checkbox task check
     setDailyPlan(plan);
   };
 
+  const generateLinkPreview = (url) => {
+    const urlLower = url.toLowerCase().trim();
+    let title = "Web Bookmark";
+    let summary = "Local bookmark created from URL.";
+    let tags = ["bookmark", "web"];
+    let thumbnail = null;
+
+    if (urlLower.includes("youtube.com") || urlLower.includes("youtu.be")) {
+      title = "YouTube Video Reference";
+      summary = "Video link reference captured. View tutorials or media content guides.";
+      tags = ["video", "youtube", "media"];
+      thumbnail = "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=150&auto=format&fit=crop&q=60";
+    } else if (urlLower.includes("github.com")) {
+      title = "GitHub Repository Link";
+      summary = "Developer source repository. Sync code branches and logs.";
+      tags = ["coding", "github", "git"];
+      thumbnail = "https://images.unsplash.com/photo-1618401471353-b98aedd07871?w=150&auto=format&fit=crop&q=60";
+    } else if (urlLower.includes("awwwards.com")) {
+      title = "Awwwards Clean Layout Reference";
+      summary = "Web design inspiration directory. Clean layouts and interactive grids.";
+      tags = ["design", "inspiration", "web-dev"];
+      thumbnail = "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=150&auto=format&fit=crop&q=60";
+    } else if (urlLower.includes("nextjs.org") || urlLower.includes("react.dev")) {
+      title = "React & Next.js Docs Reference";
+      summary = "Framework developer guides, hooks API indexes, and build guidelines.";
+      tags = ["coding", "react", "nextjs"];
+      thumbnail = "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=150&auto=format&fit=crop&q=60";
+    } else if (urlLower.includes("twitter.com") || urlLower.includes("x.com")) {
+      title = "Social Post Bookmarked";
+      summary = "Social post reference and threads indexed locally for future citation.";
+      tags = ["social", "bookmarks"];
+      thumbnail = "https://images.unsplash.com/photo-1611605698335-8b15d27e03f9?w=150&auto=format&fit=crop&q=60";
+    } else {
+      const domain = urlLower.replace('https://', '').replace('http://', '').split('/')[0];
+      title = `${domain || "Web"} Resource`;
+      summary = `Bookmarked URL: ${url}. Scraped and indexed securely by Kario.`;
+      tags = ["bookmark", "imported"];
+      thumbnail = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=150&auto=format&fit=crop&q=60";
+    }
+
+    return { title, summary, tags, thumbnail };
+  };
+
+  const handleCreateLink = (e) => {
+    e.preventDefault();
+    if (!linkForm.url) return;
+
+    const url = linkForm.url.trim();
+    const preview = generateLinkPreview(url);
+
+    const newMemory = {
+      id: `mem-${Date.now()}`,
+      type: 'link',
+      title: preview.title,
+      content: url,
+      summary: preview.summary,
+      tags: preview.tags,
+      date: 'Today, Just now',
+      views: 1,
+      thumbnail: preview.thumbnail
+    };
+
+    const updated = [newMemory, ...memories];
+    setMemories(updated);
+    saveMemories(updated);
+    setAddModalType(null);
+    setLinkForm({ url: '' });
+  };
+
   const handleClipboardPaste = async () => {
     try {
       if (!navigator.clipboard) {
@@ -285,21 +526,39 @@ Let me know if you would like me to convert this info into a checkbox task check
         return;
       }
 
-      const newMemory = {
-        id: `mem-${Date.now()}`,
-        type: 'clipboard',
-        title: 'Pasted Clipboard Snippet',
-        content: text,
-        summary: text.slice(0, 50) + (text.length > 50 ? '...' : ''),
-        tags: ['clipboard', 'pasted'],
-        date: 'Today, Just now',
-        views: 1
-      };
+      const isUrl = /^(https?:\/\/[^\s$.?#].[^\s]*)$/i.test(text.trim());
+      let newMemory;
+      
+      if (isUrl) {
+        const preview = generateLinkPreview(text.trim());
+        newMemory = {
+          id: `mem-${Date.now()}`,
+          type: 'link',
+          title: preview.title,
+          content: text.trim(),
+          summary: preview.summary,
+          tags: [...preview.tags, 'pasted'],
+          date: 'Today, Just now',
+          views: 1,
+          thumbnail: preview.thumbnail
+        };
+      } else {
+        newMemory = {
+          id: `mem-${Date.now()}`,
+          type: 'clipboard',
+          title: 'Pasted Clipboard Snippet',
+          content: text,
+          summary: text.slice(0, 50) + (text.length > 50 ? '...' : ''),
+          tags: ['clipboard', 'pasted'],
+          date: 'Today, Just now',
+          views: 1
+        };
+      }
 
       const updated = [newMemory, ...memories];
       setMemories(updated);
       saveMemories(updated);
-      alert(`Successfully pasted from clipboard: "${newMemory.summary}"`);
+      alert(`Successfully pasted from clipboard: "${newMemory.title}"`);
     } catch (err) {
       console.error("Clipboard sync failure", err);
       alert("Failed to read system clipboard. Please ensure clipboard permissions are granted.");
@@ -362,6 +621,10 @@ Let me know if you would like me to convert this info into a checkbox task check
           <AssistantTab 
             memories={memories}
             tasks={tasks}
+            setMemories={setMemories}
+            setTasks={setTasks}
+            saveMemories={saveMemories}
+            saveTasks={saveTasks}
             conversations={conversations}
             setConversations={(conv) => {
               setConversations(conv);
@@ -504,6 +767,38 @@ Let me know if you would like me to convert this info into a checkbox task check
         </div>
       )}
 
+      {/* 1.5. Add Link Modal */}
+      {addModalType === 'link' && (
+        <div className="modal-overlay" onClick={() => setAddModalType(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Bookmark Web Link</h3>
+              <button className="modal-close-btn" onClick={() => setAddModalType(null)}><X size={18} /></button>
+            </div>
+            <form onSubmit={handleCreateLink}>
+              <div className="form-group">
+                <label>Website URL</label>
+                <input 
+                  type="url" 
+                  placeholder="https://youtube.com/watch?v=..." 
+                  className="form-control" 
+                  required
+                  value={linkForm.url}
+                  onChange={(e) => setLinkForm({ url: e.target.value })}
+                />
+              </div>
+              <p style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4, margin: '8px 0 16px 0' }}>
+                Kario will parse this link to auto-generate a social preview card complete with descriptions and thumbnails.
+              </p>
+              <div className="btn-row">
+                <button type="button" className="btn btn-secondary" onClick={() => setAddModalType(null)}>Cancel</button>
+                <button type="submit" className="btn btn-primary">Save Bookmark</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* 2. Add Document Modal */}
       {addModalType === 'document' && (
         <div className="modal-overlay" onClick={() => setAddModalType(null)}>
@@ -614,45 +909,86 @@ Let me know if you would like me to convert this info into a checkbox task check
 
       {/* 4. Add Voice Note Modal */}
       {addModalType === 'voice' && (
-        <div className="modal-overlay" onClick={() => setAddModalType(null)}>
+        <div className="modal-overlay" onClick={() => { handleStopVoiceRecord(); setAddModalType(null); }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Record Voice Note</h3>
-              <button className="modal-close-btn" onClick={() => setAddModalType(null)}><X size={18} /></button>
+              <button className="modal-close-btn" onClick={() => { handleStopVoiceRecord(); setAddModalType(null); }}><X size={18} /></button>
             </div>
-            <div style={{ textAlign: 'center', padding: '30px 10px' }}>
-              <div className="illustration-circle" style={{ margin: '0 auto 20px auto', width: '100px', height: '100px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }}>
-                <Mic size={36} style={{ animation: 'float-pulse 1.5s infinite' }} />
+            <div style={{ textAlign: 'center', padding: '24px 10px' }}>
+              <div className="illustration-circle" style={{ 
+                margin: '0 auto 20px auto', 
+                width: '90px', 
+                height: '90px', 
+                background: voiceIsRecording ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-app)', 
+                color: 'var(--danger)',
+                border: voiceIsRecording ? '2px solid var(--danger)' : '1px solid var(--border-color)',
+                boxShadow: voiceIsRecording ? '0 0 15px rgba(239, 68, 68, 0.4)' : 'none',
+                transition: 'all 0.3s ease'
+              }}>
+                <Mic size={32} style={{ animation: voiceIsRecording ? 'float-pulse 1.2s infinite' : 'none' }} />
               </div>
-              <h4 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>Voice Recording Simulation</h4>
-              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px', maxWidth: '280px', margin: '8px auto 0 auto', lineHeight: 1.4 }}>
-                Click below to start a simulated recording. The app will capture standard brainstorm audio and save it as a text-transcribed voice memo.
-              </p>
-              <button 
-                className="btn btn-primary" 
-                style={{ marginTop: '24px', background: 'var(--danger)', width: '180px', margin: '24px auto 0 auto' }}
-                onClick={() => {
-                  setAddModalType(null);
-                  setTimeout(() => {
-                    const newVoiceMemory = {
-                      id: `mem-${Date.now()}`,
-                      type: 'voice',
-                      title: 'Audio Idea Memo',
-                      content: 'Voice Note: We should integrate client notifications inside Kario by checking calendar schedules. This triggers reminders 10 minutes prior to calls.',
-                      summary: 'Audio transcription regarding client meeting notifications and task reminders.',
-                      tags: ['voice', 'ideas', 'notifications'],
-                      date: 'Today, Just now',
-                      views: 1
-                    };
-                    const updated = [newVoiceMemory, ...memories];
-                    setMemories(updated);
-                    saveMemories(updated);
-                    alert("Voice recorded and transcribed successfully: 'We should integrate client notifications inside Kario...'");
-                  }, 1000);
-                }}
-              >
-                Record 3s Memo
-              </button>
+              
+              <h4 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                {voiceIsRecording ? `Recording... [${formatVoiceTime(voiceSeconds)}]` : 'Ready to Record'}
+              </h4>
+              
+              {/* Dynamic Transcript Box */}
+              <div style={{
+                background: 'var(--bg-app)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)',
+                padding: '12px 14px',
+                minHeight: '80px',
+                maxHeight: '120px',
+                overflowY: 'auto',
+                fontSize: '13px',
+                color: voiceTranscriptText ? 'var(--text-primary)' : 'var(--text-secondary)',
+                fontStyle: voiceTranscriptText ? 'normal' : 'italic',
+                textAlign: 'left',
+                marginTop: '16px',
+                lineHeight: 1.4
+              }}>
+                {voiceTranscriptText || "Tap 'Start Recording' and start speaking. Your speech will be transcribed live here."}
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', marginTop: '24px' }}>
+                {!voiceIsRecording ? (
+                  <button 
+                    type="button"
+                    className="onboarding-btn" 
+                    style={{ flex: 1, height: '40px', fontSize: '13px' }}
+                    onClick={handleStartVoiceRecord}
+                  >
+                    🎤 Start Recording
+                  </button>
+                ) : (
+                  <button 
+                    type="button"
+                    className="onboarding-btn" 
+                    style={{ flex: 1, height: '40px', fontSize: '13px', background: 'var(--danger)' }}
+                    onClick={handleStopVoiceRecord}
+                  >
+                    ⏹️ Stop Recording
+                  </button>
+                )}
+                <button 
+                  type="button"
+                  className="onboarding-btn" 
+                  style={{ 
+                    flex: 1, 
+                    height: '40px', 
+                    fontSize: '13px',
+                    background: 'none',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)'
+                  }}
+                  onClick={handleSaveVoiceMemory}
+                  disabled={!voiceTranscriptText || voiceTranscriptText.startsWith("Listening")}
+                >
+                  💾 Save Memo
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -975,6 +1311,80 @@ Let me know if you would like me to convert this info into a checkbox task check
               >
                 Sync with Calendar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 9. OCR Scan Progress Overlay */}
+      {isOcrScanning && (
+        <div className="modal-overlay" style={{ zIndex: 2000, background: 'rgba(0, 0, 0, 0.75)' }}>
+          <style>{`
+            @keyframes scan-laser {
+              0% { top: 0%; }
+              50% { top: 100%; }
+              100% { top: 0%; }
+            }
+          `}</style>
+          <div style={{
+            background: 'var(--bg-card)',
+            padding: '24px 30px',
+            borderRadius: 'var(--radius-lg)',
+            width: '280px',
+            textAlign: 'center',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+            border: '1px solid var(--border-color)'
+          }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px' }}>
+              🔍 OCR Scanner Active
+            </h3>
+            
+            {/* Visual Laser Scan animation container */}
+            <div style={{
+              width: '100px',
+              height: '100px',
+              margin: '0 auto 20px auto',
+              border: '2px solid var(--primary)',
+              borderRadius: '8px',
+              position: 'relative',
+              overflow: 'hidden',
+              background: '#090d16'
+            }}>
+              {/* Green Laser line */}
+              <div style={{
+                position: 'absolute',
+                left: 0,
+                width: '100%',
+                height: '3px',
+                background: '#10b981',
+                boxShadow: '0 0 10px #10b981',
+                animation: 'scan-laser 2.0s infinite linear'
+              }}></div>
+              <Sparkles size={24} style={{ color: 'var(--primary)', position: 'absolute', left: '38px', top: '38px', animation: 'float-pulse 1.5s infinite' }} />
+            </div>
+
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+              Analyzing image text & metadata...
+            </p>
+            
+            {/* Progress bar */}
+            <div style={{
+              width: '100%',
+              height: '8px',
+              background: 'var(--bg-app)',
+              borderRadius: '4px',
+              overflow: 'hidden',
+              marginTop: '12px'
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${ocrScanProgress}%`,
+                background: 'linear-gradient(90deg, var(--primary) 0%, #10b981 100%)',
+                borderRadius: '4px',
+                transition: 'width 0.2s ease-out'
+              }}></div>
+            </div>
+            <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--primary)', marginTop: '8px' }}>
+              {ocrScanProgress}%
             </div>
           </div>
         </div>

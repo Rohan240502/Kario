@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Plus, Search, FileText, Image as ImageIcon, Mic, 
-  FileCheck, Calendar, Sparkles, TrendingUp, ChevronRight 
+  FileCheck, Calendar, Sparkles, TrendingUp, ChevronRight, Link2
 } from 'lucide-react';
 
 const HomeTab = ({ 
@@ -15,6 +15,7 @@ const HomeTab = ({
   openDetailModal 
 }) => {
   const [fabOpen, setFabOpen] = useState(false);
+  const [selectedTag, setSelectedTag] = useState(null);
 
   // Dynamic greeting based on current local hours
   const getGreeting = () => {
@@ -36,8 +37,13 @@ const HomeTab = ({
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (completionPercentage / 100) * circumference;
 
-  // Last 4 memories
-  const recentMemories = [...memories].slice(0, 4);
+  // Unique tags list
+  const allTags = Array.from(new Set(memories.flatMap(m => m.tags || []))).slice(0, 8);
+
+  // Filter memories by selected tag
+  const recentMemories = selectedTag
+    ? memories.filter(m => m.tags.includes(selectedTag)).slice(0, 4)
+    : [...memories].slice(0, 4);
 
   // Next upcoming events (calendar memories)
   const calendarEvents = memories.filter(m => m.type === 'calendar').slice(0, 2);
@@ -93,6 +99,9 @@ const HomeTab = ({
       <div className="quick-actions-scroll">
         <button className="quick-action-btn" onClick={() => openAddModal('note')}>
           <FileText size={15} /> Note
+        </button>
+        <button className="quick-action-btn" onClick={() => openAddModal('link')}>
+          <Link2 size={15} /> Link
         </button>
         <button className="quick-action-btn" onClick={() => openAddModal('screenshot')}>
           <ImageIcon size={15} /> Screenshot
@@ -201,6 +210,108 @@ const HomeTab = ({
         </div>
       </div>
 
+      {/* 1. Dynamic Task timeline slider */}
+      <div className="section-header-title" style={{ marginTop: '20px' }}>
+        <span>Focus Agenda Timeline</span>
+      </div>
+      <div style={{ 
+        display: 'flex', 
+        gap: '12px', 
+        overflowX: 'auto', 
+        padding: '4px 4px 12px 4px', 
+        scrollbarWidth: 'none', 
+        width: '100%',
+        boxSizing: 'border-box'
+      }}>
+        {tasks.filter(t => !t.completed).map(task => (
+          <div 
+            key={task.id} 
+            className="notion-card"
+            style={{ 
+              flexShrink: 0, 
+              width: '140px', 
+              padding: '12px', 
+              margin: 0, 
+              background: 'var(--bg-card)',
+              borderLeft: `3px solid ${task.priority === 'high' ? 'var(--danger)' : task.priority === 'medium' ? 'var(--primary)' : 'var(--success)'}`
+            }}
+          >
+            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 'bold', textTransform: 'uppercase' }}>
+              📅 {task.dueDate}
+            </div>
+            <h4 style={{ fontSize: '12px', fontWeight: 700, margin: '6px 0', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {task.title}
+            </h4>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
+              <span className={`priority-badge priority-${task.priority}`} style={{ fontSize: '9px', padding: '2px 6px' }}>
+                {task.priority}
+              </span>
+              <input 
+                type="checkbox" 
+                checked={task.completed} 
+                onChange={() => toggleTaskCompleted(task.id)}
+                style={{ cursor: 'pointer' }}
+              />
+            </div>
+          </div>
+        ))}
+        {tasks.filter(t => !t.completed).length === 0 && (
+          <div style={{ width: '100%', textAlign: 'center', fontSize: '12px', color: 'var(--text-secondary)', padding: '16px 0' }}>
+            🎉 All caught up! No active tasks.
+          </div>
+        )}
+      </div>
+
+      {/* 2. Category tag cloud filters list */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '8px', 
+        padding: '0 4px', 
+        margin: '16px 0 8px 0', 
+        overflowX: 'auto', 
+        paddingBottom: '4px',
+        width: '100%',
+        boxSizing: 'border-box'
+      }}>
+        <button 
+          onClick={() => setSelectedTag(null)}
+          className="tag-chip" 
+          style={{ 
+            background: !selectedTag ? 'var(--primary)' : 'var(--bg-card)', 
+            color: !selectedTag ? '#fff' : 'var(--text-secondary)',
+            fontWeight: 600,
+            border: '1px solid var(--border-color)',
+            cursor: 'pointer',
+            padding: '6px 12px',
+            borderRadius: '20px',
+            fontSize: '11px',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          All
+        </button>
+        {allTags.map(tag => (
+          <button 
+            key={tag}
+            onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
+            className="tag-chip" 
+            style={{ 
+              background: tag === selectedTag ? 'var(--primary)' : 'var(--bg-card)', 
+              color: tag === selectedTag ? '#fff' : 'var(--text-secondary)',
+              fontWeight: 600,
+              border: '1px solid var(--border-color)',
+              cursor: 'pointer',
+              padding: '6px 12px',
+              borderRadius: '20px',
+              fontSize: '11px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            #{tag}
+          </button>
+        ))}
+      </div>
+
       {/* Recent Memories Section */}
       <div className="section-header-title">
         <span>Recent Memories</span>
@@ -281,6 +392,9 @@ const HomeTab = ({
           <div className="fab-menu">
             <button className="fab-menu-item" onClick={() => { openAddModal('note'); setFabOpen(false); }}>
               📝 New Note
+            </button>
+            <button className="fab-menu-item" onClick={() => { openAddModal('link'); setFabOpen(false); }}>
+              🔗 Save Link
             </button>
             <button className="fab-menu-item" onClick={() => { openAddModal('screenshot'); setFabOpen(false); }}>
               📷 OCR Screenshot
