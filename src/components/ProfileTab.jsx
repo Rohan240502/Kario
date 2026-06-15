@@ -207,7 +207,7 @@ const ProfileTab = ({
             if (!showAccounts && !unlocked) {
               const pass = window.prompt("For security, please enter your current account password to view the local accounts directory:");
               const currentUser = JSON.parse(localStorage.getItem("kario_current_user"));
-              if (currentUser && pass === currentUser.password) {
+              if (currentUser && pass && pass.trim() === currentUser.password) {
                 setUnlocked(true);
                 setShowAccounts(true);
               } else if (pass !== null) {

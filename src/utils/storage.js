@@ -142,16 +142,17 @@ export const getRegisteredUsers = () => {
 export const registerUser = (name, email, password) => {
   const users = getRegisteredUsers();
   const emailLower = email.toLowerCase().trim();
+  const passwordTrimmed = password ? password.trim() : "";
   
   if (users.some(u => u.email === emailLower)) {
     throw new Error("An account with this email already exists.");
   }
 
-  if (emailLower === password.toLowerCase().trim()) {
+  if (emailLower === passwordTrimmed.toLowerCase()) {
     throw new Error("Password cannot be identical to your email address.");
   }
   
-  const newUser = { name, email: emailLower, password };
+  const newUser = { name, email: emailLower, password: passwordTrimmed };
   users.push(newUser);
   localStorage.setItem("kario_users", JSON.stringify(users));
   return newUser;
@@ -160,7 +161,8 @@ export const registerUser = (name, email, password) => {
 export const loginUser = (email, password) => {
   const users = getRegisteredUsers();
   const emailLower = email.toLowerCase().trim();
-  const user = users.find(u => u.email === emailLower && u.password === password);
+  const passwordTrimmed = password ? password.trim() : "";
+  const user = users.find(u => u.email === emailLower && u.password === passwordTrimmed);
   
   if (!user) {
     throw new Error("Incorrect email or password.");
